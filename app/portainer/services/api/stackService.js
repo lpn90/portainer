@@ -13,7 +13,9 @@ angular.module('portainer.app').factory('StackService', [
   'EndpointProvider',
   function StackServiceFactory($q, $async, Stack, FileUploadService, StackHelper, ServiceService, ContainerService, SwarmService, EndpointProvider) {
     'use strict';
-    var service = {};
+    var service = {
+      updateGit,
+    };
 
     service.stack = function (id) {
       var deferred = $q.defer();
@@ -367,21 +369,16 @@ angular.module('portainer.app').factory('StackService', [
       return action(name, stackFileContent, env, endpointId);
     };
 
-    async function kubernetesDeployAsync(endpointId, namespace, content, compose) {
+    async function kubernetesDeployAsync(endpointId, method, payload) {
       try {
-        const payload = {
-          StackFileContent: content,
-          ComposeFormat: compose,
-          Namespace: namespace,
-        };
-        await Stack.create({ method: 'undefined', type: 3, endpointId: endpointId }, payload).$promise;
+        await Stack.create({ endpointId: endpointId, method: method, type: 3 }, payload).$promise;
       } catch (err) {
         throw { err: err };
       }
     }
 
-    service.kubernetesDeploy = function (endpointId, namespace, content, compose) {
-      return $async(kubernetesDeployAsync, endpointId, namespace, content, compose);
+    service.kubernetesDeploy = function (endpointId, method, payload) {
+      return $async(kubernetesDeployAsync, endpointId, method, payload);
     };
 
     service.start = start;
@@ -392,6 +389,20 @@ angular.module('portainer.app').factory('StackService', [
     service.stop = stop;
     function stop(id) {
       return Stack.stop({ id }).$promise;
+    }
+
+    function updateGit(id, endpointId, env, prune, gitConfig) {
+      return Stack.updateGit(
+        { endpointId, id },
+        {
+          env,
+          prune,
+          RepositoryReferenceName: gitConfig.RefName,
+          RepositoryAuthentication: gitConfig.RepositoryAuthentication,
+          RepositoryUsername: gitConfig.RepositoryUsername,
+          RepositoryPassword: gitConfig.RepositoryPassword,
+        }
+      ).$promise;
     }
 
     return service;
