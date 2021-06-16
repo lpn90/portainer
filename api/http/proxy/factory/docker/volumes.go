@@ -180,6 +180,8 @@ func (transport *Transport) decorateVolumeCreationResponse(response *http.Respon
 		return err
 	}
 
+	responseObject[volumeObjectIdentifier] = resourceID
+
 	responseObject = decorateObject(responseObject, resourceControl)
 
 	return responseutils.RewriteResponse(response, responseObject, http.StatusOK)
